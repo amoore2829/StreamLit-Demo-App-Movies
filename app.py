@@ -9,7 +9,7 @@ st.set_page_config(layout="wide")
 st.title('Top 10,000 Popular Movies')
 
 # Cache function output to improve performance
-with st.expander("Raw Dataset [Movie data](https://www.kaggle.com/datasets/ursmaheshj/top-10000-popular-movies-tmdb-05-2023?resource=download)"):
+with st.expander("Raw Dataset [Download Here](https://www.kaggle.com/datasets/ursmaheshj/top-10000-popular-movies-tmdb-05-2023?resource=download)"):
     @st.cache_data
     def load_data():
         df = pd.read_csv('popular_10000_movies_tmdb.csv')
@@ -52,7 +52,7 @@ genre_counts = genre_counts.sort_values('Count', ascending=False)
 genre_colors = {genre: f"#{random.randint(0, 0xFFFFFF):06x}" for genre in genre_counts['Genre'].unique()}
 
 # Create an interactive chart based on user selection
-chart_type = st.sidebar.radio("Select Chart Type", options=["Horizontal Bar Chart", "Pie Chart"])
+chart_type = st.sidebar.radio("Select Genre Chart Type", options=["Horizontal Bar Chart", "Pie Chart"])
 
 if chart_type == "Horizontal Bar Chart":
     # Create a horizontal bar chart using Matplotlib
@@ -80,6 +80,36 @@ else:
     plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
 
     st.pyplot(plt)
+
+st.markdown('## Movie Title Comparison')
+
+# Search for movie titles
+search_query = st.sidebar.text_input('Search Movie Titles')
+search_results = df[df['title'].str.contains(search_query, case=False)]
+
+# Select chart type for movie title comparison
+title_chart_type = st.sidebar.radio("Select Title Chart Type", options=["Horizontal Bar Chart", "Pie Chart"])
+
+# Display horizontal bar chart of selected movie titles
+if not search_results.empty and title_chart_type == "Horizontal Bar Chart":
+    plt.figure(figsize=(10, 6))
+    bars = plt.barh(search_results['title'], search_results['popularity'], color='dodgerblue')
+    plt.xlabel('Popularity')
+    plt.ylabel('Movie Title')
+    plt.title('Movie Title Popularity Comparison')
+    plt.tight_layout()
+    st.pyplot(plt)
+
+# Display pie chart of selected movie titles
+elif not search_results.empty and title_chart_type == "Pie Chart":
+    plt.figure(figsize=(6, 6))
+    wedges, texts, autotexts = plt.pie(search_results['popularity'], labels=search_results['title'], autopct='%1.1f%%')
+    plt.title('Movie Title Popularity Distribution')
+    plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
+    st.pyplot(plt)
+
+elif search_results.empty:
+    st.markdown('No matching movie titles found.')
 
 st.markdown('## Top 5 Movies')
 
