@@ -5,11 +5,11 @@ This is a web application built using Streamlit and Matplotlib that allows users
 
 ## Features
 
-- Data Visualization: Generate interactive visualizations using Matplotlib, such as line plots, bar charts, scatter plots, and more.
-- Data Analysis: Perform various data analysis tasks, including filtering, aggregation, and statistical calculations.
-- User Interaction: Interact with the visualizations by zooming, panning, and selecting data points of interest.
-- Customization: Customize the appearance of the visualizations by adjusting colors, labels, titles, and other properties.
-- Export: Save the generated visualizations as image files (PNG, JPEG, etc.) for further use and sharing.
+- Interactive charts for exploring movie genre distribution and ratings.
+- Filter movies by genre and rating range.
+- Search for specific movie titles.
+- Compare movie popularity using horizontal bar charts.
+- Display top 5 movies with their title images.
 
 ## Installation
 
