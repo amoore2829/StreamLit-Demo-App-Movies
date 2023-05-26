@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import random
+import requests
 
 st.set_page_config(layout="wide")
 
@@ -18,6 +19,22 @@ def preprocess_data(df):
     # Create an index for faster search
     df['title_lower'] = df['title'].str.lower()
     return df
+
+def get_movie_image_url(title):
+    query = f"{title} movie poster"
+    for j in search(query, num_results=1):
+        if "imdb.com" in j:
+            continue
+        return j
+    return ""
+
+def get_movie_image(title):
+    image_url = get_movie_image_url(title)
+    if image_url:
+        response = requests.get(image_url)
+        image = Image.open(BytesIO(response.content))
+        return image
+    return None
 
 df = load_data()
 df = preprocess_data(df)
@@ -47,6 +64,14 @@ genre_counts.columns = ['Genre', 'Count']
 genre_counts = genre_counts.sort_values('Count', ascending=False)
 
 genre_colors = {genre: f"#{random.randint(0, 0xFFFFFF):06x}" for genre in genre_counts['Genre'].unique()}
+
+# How to Use
+with st.expander("How to Use"):
+    st.markdown("""
+    1. Use the **Genre** filter on the left sidebar to select specific movie genres or choose **All Genres** to include all genres.
+    2. Adjust the **Rating** slider to filter movies based on their average ratings. Drag the slider handles to set the minimum and maximum rating values.
+    3. The filtered dataset will be updated automatically, and the charts will reflect the selected filters.
+    """)
 
 # Display genre filter
 st.sidebar.markdown('## Filter')
@@ -88,11 +113,6 @@ ax.set_ylabel('Movie Title')
 ax.set_title('Top 5 Movies by Popularity')
 st.pyplot(fig)
 
-st.markdown('## Top 5 Movies')
-
-st.table(top_5_movies)
-
-
 # Select random movies from the dataset
 random_movies = df.sample(100)
 
@@ -133,4 +153,3 @@ plt.tight_layout()
 
 # Display the 2x2 grid
 st.pyplot(fig)
-
