@@ -48,79 +48,89 @@ genre_counts = genre_counts.sort_values('Count', ascending=False)
 
 genre_colors = {genre: f"#{random.randint(0, 0xFFFFFF):06x}" for genre in genre_counts['Genre'].unique()}
 
-chart_type = st.sidebar.radio("Select Genre Chart Type", options=["Horizontal Bar Chart", "Pie Chart"])
-
-fig, ax = plt.subplots(figsize=(10, 6))
-
-if chart_type == "Horizontal Bar Chart":
+# Display genre filter
+st.sidebar.markdown('## Filter')
+st.sidebar.markdown('### Genre')
+chart_type_genre = st.sidebar.selectbox('Chart Type', ['Horizontal Bar Chart', 'Pie Chart'])
+if chart_type_genre == 'Horizontal Bar Chart':
+    fig, ax = plt.subplots()
     bars = ax.barh(genre_counts['Genre'], genre_counts['Count'], color=[genre_colors[genre] for genre in genre_counts['Genre']])
     ax.set_xlabel('Count')
     ax.set_ylabel('Genre')
-    ax.set_title('Movie Genre Counts')
-    ax.legend(bars, genre_counts['Genre'])
-    plt.tight_layout()
-
-    with st.container():
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.write('')
-        with col2:
-            st.pyplot(fig)
-
+    ax.set_title('Movie Genre Distribution')
+    st.pyplot(fig)
 else:
+    fig, ax = plt.subplots()
     wedges, texts, autotexts = ax.pie(genre_counts['Count'], labels=genre_counts['Genre'], colors=[genre_colors[genre] for genre in genre_counts['Genre']], autopct='%1.1f%%')
     ax.set_title('Movie Genre Distribution')
-    ax.legend(wedges, genre_counts['Genre'], loc='center left', bbox_to_anchor=(1, 0.5), title='Genre')
-    plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
-
-    with st.container():
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.write('')
-        with col2:
-            st.pyplot(fig)
-
-st.markdown('## Movie Title Comparison')
+    st.pyplot(fig)
 
 search_query = st.sidebar.text_input('Search Movie Titles')
 search_query_lower = search_query.lower()
-# Use the indexed column for faster search
 search_results = df[df['title_lower'].str.contains(search_query_lower, case=False)]
 
-title_chart_type = st.sidebar.radio("Select Title Chart Type", options=["Horizontal Bar Chart", "Pie Chart"])
-
-fig, ax = plt.subplots(figsize=(10, 6))
-
-if not search_results.empty and title_chart_type == "Horizontal Bar Chart":
+# Horizontal bar chart for movie title popularity comparison
+if not search_results.empty:
+    fig, ax = plt.subplots()
     bars = ax.barh(search_results['title'], search_results['popularity'], color='dodgerblue')
     ax.set_xlabel('Popularity')
     ax.set_ylabel('Movie Title')
     ax.set_title('Movie Title Popularity Comparison')
-    plt.tight_layout()
+    st.pyplot(fig)
 
-    with st.container():
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.write('')
-        with col2:
-            st.pyplot(fig)
+top_5_movies = df.nlargest(5, 'popularity')[['title', 'popularity']]
 
-elif not search_results.empty and title_chart_type == "Pie Chart":
-    wedges, texts, autotexts = ax.pie(search_results['popularity'], labels=search_results['title'], autopct='%1.1f%%')
-    ax.set_title('Movie Title Popularity Distribution')
-    plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
-
-    with st.container():
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.write('')
-        with col2:
-            st.pyplot(fig)
-
-elif search_results.empty:
-    st.markdown('No matching movie titles found.')
+# Horizontal bar chart for top 5 movies by popularity
+fig, ax = plt.subplots()
+bars = ax.barh(top_5_movies['title'], top_5_movies['popularity'], color='green')
+ax.set_xlabel('Popularity')
+ax.set_ylabel('Movie Title')
+ax.set_title('Top 5 Movies by Popularity')
+st.pyplot(fig)
 
 st.markdown('## Top 5 Movies')
 
-top_5_movies = df.nlargest(5, 'popularity')[['title', 'popularity']]
 st.table(top_5_movies)
+
+
+# Select random movies from the dataset
+random_movies = df.sample(100)
+
+# Create a 2x2 grid
+fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+
+# Pie chart of original_language
+ax = axes[0, 0]
+language_counts = random_movies['original_language'].value_counts()
+ax.pie(language_counts, labels=language_counts.index, autopct='%1.1f%%')
+ax.set_title('Original Language')
+
+# Line chart of release_date
+ax = axes[0, 1]
+release_dates = pd.to_datetime(random_movies['release_date'])
+ax.plot(release_dates, random_movies['popularity'], color='orange')
+ax.set_xlabel('Release Date')
+ax.set_ylabel('Popularity')
+ax.set_title('Release Date vs Popularity')
+
+# Scatter plot of budget vs popularity
+ax = axes[1, 0]
+ax.scatter(random_movies['budget'], random_movies['popularity'], alpha=0.5, color='green')
+ax.set_xlabel('Budget')
+ax.set_ylabel('Popularity')
+ax.set_title('Budget vs Popularity')
+
+# Dot plot of production_companies
+ax = axes[1, 1]
+company_counts = random_movies['production_companies'].str.split(',').apply(len)
+ax.plot(company_counts, range(len(company_counts)), 'bo')
+ax.set_xlabel('Number of Production Companies')
+ax.set_ylabel('Movie Index')
+ax.set_title('Number of Production Companies')
+
+# Adjust spacing between subplots
+plt.tight_layout()
+
+# Display the 2x2 grid
+st.pyplot(fig)
+
