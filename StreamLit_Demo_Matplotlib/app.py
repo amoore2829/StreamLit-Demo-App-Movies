@@ -41,9 +41,12 @@ unique_genres = ['All Genres'] + df['Genre'].unique().tolist()
 genre_filter = st.sidebar.multiselect('Select Genre', unique_genres)
 
 # Filters dataset based on selected genres
+# If 'All Genres' is selected in the genre_filter, no filtering is applied
 if 'All Genres' in genre_filter:
     filtered_df = df
 # Assigns rows from df where Genre column value is in genre_filter
+# If 'All Genres' is not selected in the genre_filter, specific genres are chosen
+# Only rows where 'Genre' value is in 'genre_filter' will be in 'filtered_df'
 else:
     filtered_df = df[df['Genre'].isin(genre_filter)]
 
@@ -62,6 +65,7 @@ filtered_df = filtered_df[(filtered_df['vote_average'] >= rating_filter[0]) & (f
 genre_counts = filtered_df['Genre'].value_counts().reset_index()
 # columns are then renamed to Genre and Count
 genre_counts.columns = ['Genre', 'Count']
+# sorted in descending order based on the 'Count' column = most common genres appear at the top
 genre_counts = genre_counts.sort_values('Count', ascending=False)
 
 # Assigns random color to each unique genre in genre_counts['Genre']
