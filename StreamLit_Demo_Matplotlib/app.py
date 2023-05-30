@@ -5,6 +5,7 @@ import re
 import random
 import requests
 
+# Makes the page layout wider
 st.set_page_config(layout="wide")
 
 @st.cache_data  # Cache function output to improve performance
@@ -13,6 +14,7 @@ def load_data():
     return df
 
 @st.cache_data  # Cache preprocessing steps
+# loads dataset and preprocesses it (splits genre column, cleans genre names (lower only), and creates an index for faster search)
 def preprocess_data(df):
     df['Genre'] = df['genres'].str.split(',').str[0]
     df['Genre'] = df['Genre'].apply(lambda x: re.sub(r"[\'\[\]]", "", x))
@@ -20,22 +22,7 @@ def preprocess_data(df):
     df['title_lower'] = df['title'].str.lower()
     return df
 
-def get_movie_image_url(title):
-    query = f"{title} movie poster"
-    for j in search(query, num_results=1):
-        if "imdb.com" in j:
-            continue
-        return j
-    return ""
-
-def get_movie_image(title):
-    image_url = get_movie_image_url(title)
-    if image_url:
-        response = requests.get(image_url)
-        image = Image.open(BytesIO(response.content))
-        return image
-    return None
-
+# loads and preprocesses the dataset using caching
 df = load_data()
 df = preprocess_data(df)
 
@@ -46,23 +33,38 @@ with st.expander("Raw Dataset [Download Here](https://www.kaggle.com/datasets/ur
 
 st.markdown('## Data Visualization')
 
+# Sidebar that allows users to select genre filters and a rating range using a slider
+# List that contains unique genres in the DataFrame
 unique_genres = ['All Genres'] + df['Genre'].unique().tolist()
 
+# Displays a multiselect widget for the user to select multiple genres from unique_genres which are then stored in genre_filter
 genre_filter = st.sidebar.multiselect('Select Genre', unique_genres)
 
+# Filters dataset based on selected genres
 if 'All Genres' in genre_filter:
     filtered_df = df
+# Assigns rows from df where Genre column value is in genre_filter
 else:
     filtered_df = df[df['Genre'].isin(genre_filter)]
 
+# Rating filter applied to filter dataset based on selected rating range
+# sidebar widget displays a slider
+# vote_average is selected by sliding minimum and maximum values which is stored in rating_filter
 rating_filter = st.sidebar.slider('Select Rating', min_value=float(df['vote_average'].min()), max_value=float(df['vote_average'].max()),
                                   value=(float(df['vote_average'].min()), float(df['vote_average'].max())))
+# Filtered based on selected rating range
+# rows in filtered_df must have a vote_average greater than or equal to rating_filter[0] or
+# less than or equal to rating_filter[1]
 filtered_df = filtered_df[(filtered_df['vote_average'] >= rating_filter[0]) & (filtered_df['vote_average'] <= rating_filter[1])]
 
+# Dataframe computing using value_counts()
+# stored in new df genre_counts
 genre_counts = filtered_df['Genre'].value_counts().reset_index()
+# columns are then renamed to Genre and Count
 genre_counts.columns = ['Genre', 'Count']
 genre_counts = genre_counts.sort_values('Count', ascending=False)
 
+# Assigns random color to each unique genre in genre_counts['Genre']
 genre_colors = {genre: f"#{random.randint(0, 0xFFFFFF):06x}" for genre in genre_counts['Genre'].unique()}
 
 # How to Use
@@ -73,9 +75,10 @@ with st.expander("How to Use"):
     3. The filtered dataset will be updated automatically, and the charts will reflect the selected filters.
     """)
 
-# Display genre filter
+# Display genre based on filtered dataset
 st.sidebar.markdown('## Filter')
 st.sidebar.markdown('### Genre')
+# Chart type is selected using a selectbox in the sidebar
 chart_type_genre = st.sidebar.selectbox('Chart Type', ['Horizontal Bar Chart', 'Pie Chart'])
 if chart_type_genre == 'Horizontal Bar Chart':
     fig, ax = plt.subplots()
@@ -83,6 +86,7 @@ if chart_type_genre == 'Horizontal Bar Chart':
     ax.set_xlabel('Count')
     ax.set_ylabel('Genre')
     ax.set_title('Movie Genre Distribution')
+# Displays chart
     st.pyplot(fig)
 else:
     fig, ax = plt.subplots()
@@ -90,6 +94,7 @@ else:
     ax.set_title('Movie Genre Distribution')
     st.pyplot(fig)
 
+# Allows user to enter movie title and filter dataset based on search query
 search_query = st.sidebar.text_input('Search Movie Titles')
 search_query_lower = search_query.lower()
 search_results = df[df['title_lower'].str.contains(search_query_lower, case=False)]
@@ -103,6 +108,7 @@ if not search_results.empty:
     ax.set_title('Movie Title Popularity Comparison')
     st.pyplot(fig)
 
+# filters dataset for top 5 movies
 top_5_movies = df.nlargest(5, 'popularity')[['title', 'popularity']]
 
 # Horizontal bar chart for top 5 movies by popularity
@@ -113,7 +119,9 @@ ax.set_ylabel('Movie Title')
 ax.set_title('Top 5 Movies by Popularity')
 st.pyplot(fig)
 
-# Select random movies from the dataset
+
+# Displays 2x2 grid of charts from based on dataset
+# # Select random movies from the dataset
 random_movies = df.sample(100)
 
 # Create a 2x2 grid
